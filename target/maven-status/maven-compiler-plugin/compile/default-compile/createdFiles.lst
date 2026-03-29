@@ -1,0 +1,16 @@
+pt\unl\fct\di\adc\firstwebapp\util\RequestWrapper.class
+pt\unl\fct\di\adc\firstwebapp\resources\LoginResource.class
+pt\unl\fct\di\adc\firstwebapp\resources\RegisterResource.class
+pt\unl\fct\di\adc\firstwebapp\util\ErrorMessages.class
+pt\unl\fct\di\adc\firstwebapp\util\MessageHelper.class
+pt\unl\fct\di\adc\firstwebapp\resources\MediaResource.class
+pt\unl\fct\di\adc\firstwebapp\util\RegisterData.class
+pt\unl\fct\di\adc\firstwebapp\util\AuthToken.class
+pt\unl\fct\di\adc\firstwebapp\util\LoginData.class
+pt\unl\fct\di\adc\firstwebapp\resources\MediaResource$1.class
+pt\unl\fct\di\adc\firstwebapp\util\UpdateData.class
+pt\unl\fct\di\adc\firstwebapp\util\TokenData.class
+pt\unl\fct\di\adc\firstwebapp\resources\ComputationResource.class
+pt\unl\fct\di\adc\firstwebapp\resources\UserResource.class
+pt\unl\fct\di\adc\firstwebapp\util\UpdateData$AttributesData.class
+pt\unl\fct\di\adc\firstwebapp\util\AuthUtils.class
