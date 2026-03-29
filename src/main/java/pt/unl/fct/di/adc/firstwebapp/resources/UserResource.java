@@ -3,6 +3,7 @@ package pt.unl.fct.di.adc.firstwebapp.resources;
 import java.util.*;
 import java.util.logging.Logger;
 
+import com.google.api.client.util.store.MemoryDataStoreFactory;
 import jakarta.ws.rs.core.*;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -60,12 +61,8 @@ public class UserResource {
         Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
         Entity tokenEntity = datastore.get(tokenKey);
 
-        if(tokenEntity == null) {
-            return MessageHelper.error(ErrorMessages.INVALID_TOKEN, ErrorMessages.INVALID_TOKEN_MSG);
-        }
-        if(tokenEntity.getLong("expirationDate") < System.currentTimeMillis()){
-            return MessageHelper.error(ErrorMessages.TOKEN_EXPIRED,ErrorMessages.TOKEN_EXPIRED_MSG);
-        }
+        Response error;
+        if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
         String role = tokenEntity.getString("user_role");
         if("USER".equals(role)){
             return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
@@ -194,15 +191,227 @@ public class UserResource {
             return MessageHelper.success(success);
         } catch (Exception e) {
             LOG.severe("Error in modAccount: " + e.getMessage());
-            return MessageHelper.error("INTERNAL_ERROR", "A technical error occurred.");
+            return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, ErrorMessages.INTERNAL_ERROR_MSG);
         }
     }
 
+    @POST
+    @Path("/showuserrole")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response showUserRole(RequestWrapper<LoginData> request) {
+        if(request == null || request.token == null || request.token.tokenID == null ||
+                request.input == null || request.input.username == null) {
+            return MessageHelper.error(ErrorMessages.INVALID_INPUT, ErrorMessages.INVALID_INPUT_MSG);
+        }
+
+        String targetUsername = request.input.username;
+
+        try {
+            Key callerTokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
+            Entity callerTokenEntity = datastore.get(callerTokenKey);
+
+            Key targetUserKey = datastore.newKeyFactory().setKind("User").newKey(targetUsername);
+            Entity targetUserEntity = datastore.get(targetUserKey);
+
+            Response error;
+            if ((error = AuthUtils.validateToken(callerTokenEntity)) != null) return error;
+            if ((error = AuthUtils.validateUser(targetUserEntity)) != null) return error;
+
+            String callerRole = callerTokenEntity.getString("user_role");
+            String targetRole = targetUserEntity.getString("user_role");
+
+            int callerWeight = AuthUtils.getRoleWeight(callerRole);
+            int targetWeight = AuthUtils.getRoleWeight(targetRole);
+
+            if (callerWeight < targetWeight) {
+                return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
+            }
+
+            Map<String, String> result = new LinkedHashMap<>();
+            result.put("username", targetUsername);
+            result.put("role", targetRole);
+
+            LOG.info("Role of " + targetUsername + " shown to " + callerTokenEntity.getString("username"));
+            return MessageHelper.success(result);
+
+        } catch (Exception e) {
+            LOG.severe("Error in showUserRole: " + e.getMessage());
+            return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path(("changeuserrole"))
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response changeUserRole(RequestWrapper<RoleData> request) {
+        if(request == null || request.token == null || request.token.tokenID == null ||
+                request.input == null || request.input.username == null || request.input.newRole == null) {
+            return MessageHelper.error(ErrorMessages.INVALID_INPUT, ErrorMessages.INVALID_INPUT_MSG);
+        }
+
+        RoleData data = request.input;
+
+        if(!(data.newRole.equals("USER") ||  data.newRole.equals("ADMIN")|| data.newRole.equals("BOFFICER"))){
+            return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
+        }
+
+        try {
+            Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
+            Entity tokenEntity = datastore.get(tokenKey);
+
+            Response error;
+            if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
 
 
+            String callerRole = tokenEntity.getString("user_role");
+
+            if (AuthUtils.getRoleWeight(callerRole) < 3) {
+                return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
+            }
+
+            if (tokenEntity.getString("username").equals(data.username)) {
+                return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
+            }
+
+            Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
+            Entity userEntity = datastore.get(userKey);
+            if ((error = AuthUtils.validateUser(userEntity)) != null) return error;
+
+            if (userEntity.getString("user_role").equals(data.newRole)) {
+                return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
+            }
 
 
+            Transaction txn = datastore.newTransaction();
+            try {
+                Entity user = txn.get(userKey);
+                Entity.Builder updateBuilder = Entity.newBuilder(user);
+                updateBuilder.set("user_role", data.newRole);
 
+                txn.put(updateBuilder.build());
+                txn.commit();
+
+                LOG.info("Role updated successfully for user: " + data.username);
+                return MessageHelper.success("Role updated successfully");
+            } finally {
+                if (txn.isActive()) txn.rollback();
+            }
+        } catch (Exception e) {
+            LOG.severe("Erro em changeUserRole: " + e.getMessage());
+            return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/changeuserpwd")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response changeUserPassword(RequestWrapper<PasswordData> request) {
+        if(request == null || request.token == null || request.token.tokenID == null ||
+                request.input == null || request.input.username == null ||
+                request.input.oldPassword == null || request.input.newPassword == null) {
+            return MessageHelper.error(ErrorMessages.INVALID_INPUT, ErrorMessages.INVALID_INPUT_MSG);
+        }
+
+        PasswordData data = request.input;
+
+        try {
+            // 2. Obter e Validar o Token da sessão
+            Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
+            Entity tokenEntity = datastore.get(tokenKey);
+
+            Response error;
+            if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
+
+            if (!tokenEntity.getString("username").equals(data.username)) {
+                return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
+            }
+
+            // 4. Obter a entidade User do Datastore
+            Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
+            Entity userEntity = datastore.get(userKey);
+            if ((error = AuthUtils.validateUser(userEntity)) != null) return error;
+
+            String hashedOld = DigestUtils.sha512Hex(data.oldPassword);
+            if (!userEntity.getString("user_pwd").equals(hashedOld)) {
+                return MessageHelper.error(ErrorMessages.INVALID_CREDENTIALS, ErrorMessages.INVALID_CREDENTIALS_MSG);
+            }
+
+            if (data.newPassword.equals(data.oldPassword)) {
+                return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
+            }
+
+            Transaction txn = datastore.newTransaction();
+            try {
+                Entity user = txn.get(userKey);
+                Entity.Builder updateBuilder = Entity.newBuilder(user);
+                updateBuilder.set("user_pwd", DigestUtils.sha512Hex(data.newPassword));
+
+                txn.put(updateBuilder.build());
+                txn.commit();
+
+                LOG.info("Password self-updated successfully for user: " + data.username);
+                return MessageHelper.success("Password changed successfully");
+            } finally {
+                if (txn.isActive()) txn.rollback();
+            }
+        } catch (Exception e) {
+            LOG.severe("Erro em changePassword: " + e.getMessage());
+            return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/logout")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response doLogout(RequestWrapper<LoginData> request) {
+        if(request == null || request.token == null || request.token.tokenID == null ||
+                request.input == null || request.input.username == null) {
+            return MessageHelper.error(ErrorMessages.INVALID_INPUT, ErrorMessages.INVALID_INPUT_MSG);
+        }
+
+        String targetUsername = request.input.username;
+
+        try {
+            Key callerTokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
+            Entity callerTokenEntity = datastore.get(callerTokenKey);
+
+            Response error;
+
+            if ((error = AuthUtils.validateToken(callerTokenEntity)) != null) return error;
+
+            String callerUsername = callerTokenEntity.getString("username");
+            String callerRole = callerTokenEntity.getString("user_role");
+            int callerWeight = AuthUtils.getRoleWeight(callerRole); //
+
+            boolean isSelf = callerUsername.equals(targetUsername);
+
+            if (!isSelf && callerWeight < 3) {
+                return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
+            }
+
+            Query<Entity> query = Query.newEntityQueryBuilder()
+                    .setKind("Token")
+                    .setFilter(PropertyFilter.eq("username", targetUsername))
+                    .build();
+            QueryResults<Entity> results = datastore.run(query);
+
+            List<Key> keysToDelete = new ArrayList<>();
+            while (results.hasNext()) {
+                keysToDelete.add(results.next().getKey());
+            }
+
+            if (!keysToDelete.isEmpty()) {
+                datastore.delete(keysToDelete.toArray(new Key[0]));
+            }
+
+            LOG.info("Logout realizado para " + targetUsername + " por " + callerUsername);
+            return MessageHelper.success("Logout successful");
+
+        } catch (Exception e) {
+            LOG.severe("Erro no Logout: " + e.getMessage());
+            return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, ErrorMessages.INTERNAL_ERROR_MSG);
+        }
+    }
 
 
 

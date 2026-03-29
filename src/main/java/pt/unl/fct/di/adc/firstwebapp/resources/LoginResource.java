@@ -1,9 +1,6 @@
 package pt.unl.fct.di.adc.firstwebapp.resources;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Calendar;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Logger;
 
 import jakarta.ws.rs.core.*;
@@ -42,7 +39,7 @@ import com.google.gson.Gson;
 import pt.unl.fct.di.adc.firstwebapp.util.*;
 
 
-@Path("/login")
+@Path("/")
 @Produces(MediaType.APPLICATION_JSON + ";charset=utf-8")
 public class LoginResource {
 
@@ -62,7 +59,7 @@ public class LoginResource {
 	public LoginResource() {} // Nothing to be done here
 	
 	@POST
-	@Path("/")
+	@Path("/login")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response doLogin(RequestWrapper<LoginData> request) {
 		LoginData data = request.input;
@@ -103,6 +100,61 @@ public class LoginResource {
 		} catch (Exception e) {
 			LOG.severe("Login error: " + e.getMessage());
 			return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, ErrorMessages.INTERNAL_ERROR_MSG);
+		}
+	}
+
+	@POST
+	@Path("/showauthsessions")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response showAuthSessions(RequestWrapper<Void> request) {
+		if(request == null || request.token == null || request.token.tokenID == null) {
+			return MessageHelper.error(ErrorMessages.INVALID_INPUT, ErrorMessages.INVALID_INPUT_MSG);
+		}
+
+		try {
+			// 2. Validar o Token do Admin que faz o pedido
+			Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
+			Entity tokenEntity = datastore.get(tokenKey);
+
+			Response error;
+			if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
+
+			// 3. Apenas ADMIN (Peso 3) pode monitorizar todas as sessões
+			String callerRole = tokenEntity.getString("user_role");
+			if (AuthUtils.getRoleWeight(callerRole) < 3) {
+				return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
+			}
+
+			// 4. Query: Apenas sessões que ainda não expiraram
+			long currentTime = System.currentTimeMillis();
+			Query<Entity> query = Query.newEntityQueryBuilder()
+					.setKind("Token")
+					.setFilter(PropertyFilter.gt("expirationDate", currentTime))
+					.build();
+			QueryResults<Entity> results = datastore.run(query);
+
+			List<Map<String, Object>> sessionsList = new ArrayList<>();
+
+			while (results.hasNext()) {
+				Entity token = results.next();
+				Map<String, Object> s = new LinkedHashMap<>();
+				s.put("tokenID", token.getKey().getName());
+				s.put("username", token.getString("username"));
+				s.put("role", token.getString("user_role"));
+				s.put("expiresAt", token.getLong("expirationDate"));
+
+				sessionsList.add(s);
+			}
+
+			// 5. Formatar o output final exigido: status: success, data: { sessions: [...] }
+			Map<String, Object> dataField = new LinkedHashMap<>();
+			dataField.put("sessions", sessionsList);
+
+			return MessageHelper.success(dataField);
+
+		} catch (Exception e) {
+			LOG.severe("Error in showSessions: " + e.getMessage());
+			return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, e.getMessage());
 		}
 	}
 }
