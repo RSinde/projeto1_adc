@@ -137,10 +137,15 @@ public class LoginResource {
 
 			while (results.hasNext()) {
 				Entity token = results.next();
+
+                String username = token.getString("username");
+                Key userKey = datastore.newKeyFactory().setKind("User").newKey(username);
+                Entity userEntity = datastore.get(userKey);
+
 				Map<String, Object> s = new LinkedHashMap<>();
 				s.put("tokenID", token.getKey().getName());
 				s.put("username", token.getString("username"));
-				s.put("role", token.getString("user_role"));
+				s.put("role", userEntity.getString("user_role"));
 				s.put("expiresAt", token.getLong("expirationDate"));
 
 				sessionsList.add(s);

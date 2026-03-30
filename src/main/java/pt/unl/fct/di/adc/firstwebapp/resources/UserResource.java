@@ -108,11 +108,15 @@ public class UserResource {
             Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
             Entity tokenEntity = datastore.get(tokenKey);
 
+            String username = tokenEntity.getString("username");
+            Key callerUserKey = datastore.newKeyFactory().setKind("User").newKey(username);
+            Entity callerUserEntity = datastore.get(callerUserKey);
+
             Response error;
             if ((error = AuthUtils.validateUser(userEntity)) != null) return error;
             if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
 
-            int callerWeight = AuthUtils.getRoleWeight(tokenEntity.getString("user_role"));
+            int callerWeight = AuthUtils.getRoleWeight(callerUserEntity.getString("user_role"));
 
             if (callerWeight < 3) { // Peso 3 é o ADMIN na tua lógica
                 return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
@@ -157,12 +161,16 @@ public class UserResource {
             Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
             Entity tokenEntity = datastore.get(tokenKey);
 
+            String username = tokenEntity.getString("username");
+            Key callerUserKey = datastore.newKeyFactory().setKind("User").newKey(username);
+            Entity callerUserEntity = datastore.get(callerUserKey);
+
             Response error;
             if ((error = AuthUtils.validateUser(userEntity)) != null) return error;
             if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
 
             String callerUsername = tokenEntity.getString("username");
-            String callerRole = tokenEntity.getString("user_role");
+            String callerRole = callerUserEntity.getString("user_role");
             String targetUsername = userEntity.getKey().getName();
             String targetRole = userEntity.getString("user_role");
 
@@ -213,6 +221,10 @@ public class UserResource {
             Key targetUserKey = datastore.newKeyFactory().setKind("User").newKey(targetUsername);
             Entity targetUserEntity = datastore.get(targetUserKey);
 
+            String username = callerTokenEntity.getString("username");
+            Key callerUserKey = datastore.newKeyFactory().setKind("User").newKey(username);
+            Entity callerUserEntity = datastore.get(callerUserKey);
+
             Response error;
             if ((error = AuthUtils.validateToken(callerTokenEntity)) != null) return error;
             if ((error = AuthUtils.validateUser(targetUserEntity)) != null) return error;
@@ -259,11 +271,14 @@ public class UserResource {
             Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
             Entity tokenEntity = datastore.get(tokenKey);
 
+            String username = tokenEntity.getString("username");
+            Key callerUserKey = datastore.newKeyFactory().setKind("User").newKey(username);
+            Entity callerUserEntity = datastore.get(callerUserKey);
+
             Response error;
             if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
 
-
-            String callerRole = tokenEntity.getString("user_role");
+            String callerRole = callerUserEntity.getString("user_role");
 
             if (AuthUtils.getRoleWeight(callerRole) < 3) {
                 return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
@@ -326,7 +341,6 @@ public class UserResource {
                 return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
             }
 
-            // 4. Obter a entidade User do Datastore
             Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
             Entity userEntity = datastore.get(userKey);
             if ((error = AuthUtils.validateUser(userEntity)) != null) return error;
@@ -375,12 +389,16 @@ public class UserResource {
             Key callerTokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
             Entity callerTokenEntity = datastore.get(callerTokenKey);
 
+            String username = callerTokenEntity.getString("username");
+            Key callerUserKey = datastore.newKeyFactory().setKind("User").newKey(username);
+            Entity callerUserEntity = datastore.get(callerUserKey);
+
             Response error;
 
             if ((error = AuthUtils.validateToken(callerTokenEntity)) != null) return error;
 
             String callerUsername = callerTokenEntity.getString("username");
-            String callerRole = callerTokenEntity.getString("user_role");
+            String callerRole = callerUserEntity.getString("user_role");
             int callerWeight = AuthUtils.getRoleWeight(callerRole); //
 
             boolean isSelf = callerUsername.equals(targetUsername);
