@@ -63,11 +63,12 @@ public class LoginResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response doLogin(RequestWrapper<LoginData> request) {
 		LoginData data = request.input;
+        String username = data.username.trim();
 		LOG.info("Login attempt for: " + data.username);
 
 		try {
 			// 1. Procurar o utilizador no Datastore
-			Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
+			Key userKey = datastore.newKeyFactory().setKind("User").newKey(username);
 			Entity user = datastore.get(userKey);
 
 			if (user == null) {
@@ -81,7 +82,7 @@ public class LoginResource {
 			}
 
 			// 3. Gerar o AuthToken (o teu construtor gera o UUID automaticamente)
-			AuthToken token = new AuthToken(data.username);
+			AuthToken token = new AuthToken(username);
 
 			// 4. Guardar o Token no Datastore para validação de pedidos futuros
 			Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(token.tokenID);
@@ -94,7 +95,7 @@ public class LoginResource {
 
 			datastore.put(tokenEntity);
 
-			LOG.info("Login successful for user: " + data.username);
+			LOG.info("Login successful for user: " + username);
 			return MessageHelper.success(token);
 
 		} catch (Exception e) {

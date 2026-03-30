@@ -46,6 +46,7 @@ public class RegisterResource {
         }
 
         RegisterData data = request.input;
+        String username = data.username.trim();
         LOG.fine("Attempt to register user: " + data.username);
 
         if(!data.validRegistration())
@@ -53,7 +54,7 @@ public class RegisterResource {
 
         try {
             Transaction txn = datastore.newTransaction();
-            Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
+            Key userKey = datastore.newKeyFactory().setKind("User").newKey(username);
             Entity user = txn.get(userKey);
 
             if(user != null) {
@@ -70,10 +71,10 @@ public class RegisterResource {
                         .build();
                 txn.put(user);
                 txn.commit();
-                LOG.info("User registered " + data.username);
+                LOG.info("User registered " + username);
 
 				Map<String, String> successData = new LinkedHashMap<>();
-				successData.put("username", data.username);
+				successData.put("username", username);
 				successData.put("role", data.role);
 
                 return MessageHelper.success(successData);
