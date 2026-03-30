@@ -1,30 +1,122 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
-
+<html lang="pt">
 <head>
-  <meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8" />
-  <title>ADC: My First Web App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUDO - Gestão de Utilizadores</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
-  <h1>Welcome to this very simple web application!</h1>
+<div class="container">
+    <h1>Menu de Operações</h1>
+    <div id="session-info">
+        <strong>Estado:</strong> <span id="user-status">Não Autenticado</span>
+    </div>
 
-  <table>
-    <tr>
-      <td colspan="2" style="font-weight:bold;">Available Services:</td>
-    </tr>
-    <tr>
-      <td><a href='/rest/utils/hello'>Say Hello!</a></td>
-      <td>(greetings)</td>
-    </tr>
-    <tr>
-      <td><a href='/rest/utils/time'>What time is it?</a></td>
-      <td>(see server time)</td>
-    </tr>
-  </table>
+    <div class="menu-list">
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op1-content')">1. createAccount</button>
+            <div id="op1-content" class="op-content">
+                <input type="email" id="reg-email" placeholder="Email (Username)">
+                <input type="password" id="reg-pass" placeholder="Password">
+                <input type="password" id="reg-conf" placeholder="Confirmar Password">
+                <input type="text" id="reg-phone" placeholder="Telefone">
+                <input type="text" id="reg-addr" placeholder="Morada">
+                <select id="reg-role">
+                    <option value="USER">USER</option>
+                    <option value="BOFFICER">BOFFICER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+                <button class="btn-submit" onclick="ui.doRegister()">Submeter</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op2-content')">2. login</button>
+            <div id="op2-content" class="op-content">
+                <input type="email" id="login-email" placeholder="Email">
+                <input type="password" id="login-pass" placeholder="Password">
+                <button class="btn-submit" onclick="ui.doLogin()">Entrar</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.op3()">3. showUsers</button>
+            <div id="op3-content" class="op-content result-area"></div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op4-content')">4. deleteAccount</button>
+            <div id="op4-content" class="op-content">
+                <p><small>Apenas Admins podem eliminar contas de outros.</small></p>
+                <input type="email" id="del-username" placeholder="Email da conta a eliminar">
+                <button class="btn-danger" onclick="ui.doDelete()">Eliminar Permanentemente</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op5-content')">5. modAccount</button>
+            <div id="op5-content" class="op-content">
+                <input type="email" id="mod-username" placeholder="Email do alvo">
+                <input type="text" id="mod-phone" placeholder="Novo Telefone">
+                <input type="text" id="mod-addr" placeholder="Nova Morada">
+                <button class="btn-submit" onclick="ui.doModify()">Atualizar</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.op6()">6. showAuthSessions</button>
+            <div id="op6-content" class="op-content result-area"></div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op7-content')">7. showUserRole</button>
+            <div id="op7-content" class="op-content">
+                <input type="email" id="role-query-user" placeholder="Email do utilizador">
+                <button class="btn-submit" onclick="ui.doShowRole()">Verificar Cargo</button>
+                <div id="op7-result" class="result-area"></div>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op8-content')">8. changeUserRole</button>
+            <div id="op8-content" class="op-content">
+                <input type="email" id="chrole-username" placeholder="Email do alvo">
+                <select id="chrole-new">
+                    <option value="USER">USER</option>
+                    <option value="BOFFICER">BOFFICER</option>
+                    <option value="ADMIN">ADMIN</option>
+                </select>
+                <button class="btn-submit" onclick="ui.doChangeRole()">Alterar Cargo</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn" onclick="ui.toggle('op9-content')">9. changeUserPwd</button>
+            <div id="op9-content" class="op-content">
+                <input type="password" id="chpw-old" placeholder="Password Atual">
+                <input type="password" id="chpw-new" placeholder="Nova Password">
+                <button class="btn-submit" onclick="ui.doChangePwd()">Mudar Password</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn btn-danger-text" onclick="ui.toggle('op10-content')">10. logOut</button>
+            <div id="op10-content" class="op-content">
+                <p><small>Deixe vazio para sair da sua conta ou indique o email de outro utilizador (requer ADMIN).</small></p>
+                <input type="email" id="logout-username" placeholder="Email do utilizador">
+                <button class="btn-danger" onclick="ui.doLogout()">Confirmar Logout</button>
+            </div>
+        </div>
+
+        <div class="op-container">
+            <button class="op-btn btn-warning-text" onclick="ui.extra()">Extra. ver tudo (Debug)</button>
+            <div id="extra-content" class="op-content result-area"></div>
+        </div>
+
+    </div>
+</div>
+<script src="js/app.js"></script>
 </body>
-<footer>
-  Copyright: ADC-PEI, FCT NOVA 2026
-</footer>
-
 </html>

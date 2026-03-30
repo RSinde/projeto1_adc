@@ -127,6 +127,19 @@ public class UserResource {
                 return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
             }
 
+            Query<Entity> tokenQuery = Query.newEntityQueryBuilder()
+                    .setKind("Token")
+                    .setFilter(PropertyFilter.eq("username", data.username))
+                    .build();
+            QueryResults<Entity> results = datastore.run(tokenQuery);
+            List<Key> keysToDelete = new ArrayList<>();
+            while (results.hasNext()) {
+                keysToDelete.add(results.next().getKey());
+            }
+            if (!keysToDelete.isEmpty()) {
+                datastore.delete(keysToDelete.toArray(new Key[0]));
+            }
+
             datastore.delete(userKey);
 
             Map<String, String> successData = new LinkedHashMap<>();
@@ -253,7 +266,7 @@ public class UserResource {
     }
 
     @POST
-    @Path(("changeuserrole"))
+    @Path("/changeuserrole")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response changeUserRole(RequestWrapper<RoleData> request) {
         if(request == null || request.token == null || request.token.tokenID == null ||
@@ -271,12 +284,12 @@ public class UserResource {
             Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
             Entity tokenEntity = datastore.get(tokenKey);
 
+            Response error;
+            if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
+
             String username = tokenEntity.getString("username");
             Key callerUserKey = datastore.newKeyFactory().setKind("User").newKey(username);
             Entity callerUserEntity = datastore.get(callerUserKey);
-
-            Response error;
-            if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
 
             String callerRole = callerUserEntity.getString("user_role");
 
@@ -288,22 +301,35 @@ public class UserResource {
                 return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
             }
 
-            Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
-            Entity userEntity = datastore.get(userKey);
-            if ((error = AuthUtils.validateUser(userEntity)) != null) return error;
-
-            if (userEntity.getString("user_role").equals(data.newRole)) {
-                return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
+            Query<Entity> tokenQuery = Query.newEntityQueryBuilder()
+                    .setKind("Token")
+                    .setFilter(PropertyFilter.eq("username", data.username))
+                    .build();
+            QueryResults<Entity> targetTokens = datastore.run(tokenQuery);
+            List<Entity> tokensToUpdate = new ArrayList<>();
+            while (targetTokens.hasNext()) {
+                tokensToUpdate.add(Entity.newBuilder(targetTokens.next()).set("user_role", data.newRole).build());
             }
-
 
             Transaction txn = datastore.newTransaction();
             try {
-                Entity user = txn.get(userKey);
-                Entity.Builder updateBuilder = Entity.newBuilder(user);
+                Key targetUserKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
+                Entity targetUserEntity = txn.get(targetUserKey);
+                if ((error = AuthUtils.validateUser(targetUserEntity)) != null) return error;
+
+                if (targetUserEntity.getString("user_role").equals(data.newRole)) {
+                    return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
+                }
+
+                Entity.Builder updateBuilder = Entity.newBuilder(targetUserEntity);
                 updateBuilder.set("user_role", data.newRole);
 
                 txn.put(updateBuilder.build());
+
+                if (!tokensToUpdate.isEmpty()) {
+                    txn.put(tokensToUpdate.toArray(new Entity[0]));
+                }
+
                 txn.commit();
 
                 LOG.info("Role updated successfully for user: " + data.username);
