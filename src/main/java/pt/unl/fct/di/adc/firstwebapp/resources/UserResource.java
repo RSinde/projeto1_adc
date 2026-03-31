@@ -458,7 +458,7 @@ public class UserResource {
     }
 
 
-
+    /*  USADO PARA TESTES
     @GET
     @Path("/listallattributes")
     @Produces(MediaType.APPLICATION_JSON)
@@ -520,4 +520,5 @@ public class UserResource {
             return MessageHelper.error("INTERNAL_ERROR", "Erro ao listar atributos: " + e.getMessage());
         }
     }
+    */
 }

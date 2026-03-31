@@ -20,27 +20,27 @@
   </context-param>
   <servlet>
     <servlet-name>MainServices</servlet-name>
-    <servlet-class origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):0">org.glassfish.jersey.servlet.ServletContainer</servlet-class>
-    <init-param origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):1">
+    <servlet-class origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):0">org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+    <init-param origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):1">
       <param-name>jersey.config.server.tracing.type</param-name>
       <param-value>ALL</param-value>
     </init-param>
-    <init-param origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):2">
+    <init-param origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):2">
       <param-name>jersey.config.server.provider.scanning.recursive</param-name>
       <param-value>false</param-value>
     </init-param>
-    <init-param origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):3">
+    <init-param origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):3">
       <param-name>jersey.config.server.provider.packages</param-name>
       <param-value>pt.unl.fct.di.adc.firstwebapp.resources</param-value>
     </init-param>
-    <init-param origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):4">
+    <init-param origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):4">
       <param-name>jersey.config.servlet.filter.contextPath</param-name>
       <param-value>/rest/*</param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
     <async-supported>false</async-supported>
   </servlet>
-  <servlet-mapping origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):5">
+  <servlet-mapping origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):5">
     <servlet-name>MainServices</servlet-name>
     <url-pattern>/rest/*</url-pattern>
   </servlet-mapping>
@@ -66,7 +66,7 @@
     </user-data-constraint>
   </security-constraint>
   <welcome-file-list>
-    <welcome-file origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):8">index.html</welcome-file>
+    <welcome-file origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):8">index.html</welcome-file>
   </welcome-file-list>
   <locale-encoding-mapping-list>
     <locale-encoding-mapping origin="DefaultsDescriptor(file:///C:/Users/rodsi/AppData/Local/Google/ct4j-cloud-sdk/LATEST/google-cloud-sdk/platform/google_appengine/google/appengine/tools/java/docs/jetty121ee11/webdefault.xml):9">
@@ -236,11 +236,11 @@
     <tracking-mode>URL</tracking-mode>
     <tracking-mode>COOKIE</tracking-mode>
   </session-config>
-  <error-page origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):48">
+  <error-page origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):48">
     <error-code>500</error-code>
     <location>/error/500.html</location>
   </error-page>
-  <error-page origin="WebDescriptor(file:///C:/Users/rodsi/Desktop/NOVA/3%C2%BAAno2%C2%BASem/ADC/projeto/target/appengine-staging/WEB-INF/web.xml):49">
+  <error-page origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):49">
     <error-code>404</error-code>
     <location>/error/404.html</location>
   </error-page>
