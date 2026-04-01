@@ -67,7 +67,6 @@ public class LoginResource {
 		LOG.info("Login attempt for: " + data.username);
 
 		try {
-			// 1. Procurar o utilizador no Datastore
 			Key userKey = datastore.newKeyFactory().setKind("User").newKey(username);
 			Entity user = datastore.get(userKey);
 
@@ -75,16 +74,13 @@ public class LoginResource {
 				return MessageHelper.error(ErrorMessages.USER_NOT_FOUND, ErrorMessages.USER_NOT_FOUND_MSG);
 			}
 
-			// 2. Verificar a password (SHA-512) usando o campo 'user_pwd' que criaste no registo
 			String hashedInputPassword = DigestUtils.sha512Hex(data.password);
 			if (!user.getString("user_pwd").equals(hashedInputPassword)) {
 				return MessageHelper.error(ErrorMessages.INVALID_CREDENTIALS, ErrorMessages.INVALID_CREDENTIALS_MSG);
 			}
 
-			// 3. Gerar o AuthToken (o teu construtor gera o UUID automaticamente)
 			AuthToken token = new AuthToken(username);
 
-			// 4. Guardar o Token no Datastore para validação de pedidos futuros
 			Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(token.tokenID);
 			Entity tokenEntity = Entity.newBuilder(tokenKey)
 					.set("username", token.username)
@@ -113,20 +109,17 @@ public class LoginResource {
 		}
 
 		try {
-			// 2. Validar o Token do Admin que faz o pedido
 			Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
 			Entity tokenEntity = datastore.get(tokenKey);
 
 			Response error;
 			if ((error = AuthUtils.validateToken(tokenEntity)) != null) return error;
 
-			// 3. Apenas ADMIN (Peso 3) pode monitorizar todas as sessões
 			String callerRole = tokenEntity.getString("user_role");
 			if (AuthUtils.getRoleWeight(callerRole) < 3) {
 				return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
 			}
 
-			// 4. Query: Apenas sessões que ainda não expiraram
 			long currentTime = System.currentTimeMillis();
 			Query<Entity> query = Query.newEntityQueryBuilder()
 					.setKind("Token")
@@ -152,7 +145,6 @@ public class LoginResource {
 				sessionsList.add(s);
 			}
 
-			// 5. Formatar o output final exigido: status: success, data: { sessions: [...] }
 			Map<String, Object> dataField = new LinkedHashMap<>();
 			dataField.put("sessions", sessionsList);
 

@@ -86,7 +86,7 @@ public class UserResource {
             LOG.info("Users listed successfully by: " + tokenEntity.getString("username"));
             return MessageHelper.success(users);
         } catch(Exception e) {
-            LOG.severe("Error querying users: " + e.getMessage());
+            LOG.severe("Error in showUsers: " + e.getMessage());
             return MessageHelper.error("INTERNAL_ERROR", "Could not fetch user list.");
         }
     }
@@ -101,7 +101,6 @@ public class UserResource {
         }
         LoginData data = request.input;
         try {
-            // 2. Criar as chaves e ir ao Datastore (Usar tokenId minúsculo)
             Key userKey = datastore.newKeyFactory().setKind("User").newKey(data.username);
             Entity userEntity = datastore.get(userKey);
 
@@ -118,11 +117,10 @@ public class UserResource {
 
             int callerWeight = AuthUtils.getRoleWeight(callerUserEntity.getString("user_role"));
 
-            if (callerWeight < 3) { // Peso 3 é o ADMIN na tua lógica
+            if (callerWeight < 3) {
                 return MessageHelper.error(ErrorMessages.UNAUTHORIZED, ErrorMessages.UNAUTHORIZED_MSG);
             }
 
-            // Impede que um Admin se apague a si próprio por acidente
             if(userEntity.getKey().getName().equals(tokenEntity.getString("username"))){
                 return MessageHelper.error(ErrorMessages.FORBIDDEN, ErrorMessages.FORBIDDEN_MSG);
             }
@@ -147,7 +145,7 @@ public class UserResource {
             return MessageHelper.success(successData);
 
         } catch (Exception e) {
-            LOG.severe("Crash no deleteAccount: " + e.getMessage());
+            LOG.severe("Error in deleteAccount: " + e.getMessage());
             return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, ErrorMessages.INTERNAL_ERROR_MSG);
         }
     }
@@ -242,7 +240,7 @@ public class UserResource {
             if ((error = AuthUtils.validateToken(callerTokenEntity)) != null) return error;
             if ((error = AuthUtils.validateUser(targetUserEntity)) != null) return error;
 
-            String callerRole = callerTokenEntity.getString("user_role");
+            String callerRole = callerUserEntity.getString("user_role");
             String targetRole = targetUserEntity.getString("user_role");
 
             int callerWeight = AuthUtils.getRoleWeight(callerRole);
@@ -338,7 +336,7 @@ public class UserResource {
                 if (txn.isActive()) txn.rollback();
             }
         } catch (Exception e) {
-            LOG.severe("Erro em changeUserRole: " + e.getMessage());
+            LOG.severe("Error in changeUserRole: " + e.getMessage());
             return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, e.getMessage());
         }
     }
@@ -356,7 +354,6 @@ public class UserResource {
         PasswordData data = request.input;
 
         try {
-            // 2. Obter e Validar o Token da sessão
             Key tokenKey = datastore.newKeyFactory().setKind("Token").newKey(request.token.tokenID);
             Entity tokenEntity = datastore.get(tokenKey);
 
@@ -395,7 +392,7 @@ public class UserResource {
                 if (txn.isActive()) txn.rollback();
             }
         } catch (Exception e) {
-            LOG.severe("Erro em changePassword: " + e.getMessage());
+            LOG.severe("Error in changePassword: " + e.getMessage());
             return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, e.getMessage());
         }
     }
@@ -448,11 +445,11 @@ public class UserResource {
                 datastore.delete(keysToDelete.toArray(new Key[0]));
             }
 
-            LOG.info("Logout realizado para " + targetUsername + " por " + callerUsername);
+            LOG.info("Log out done to " + targetUsername + " by " + callerUsername);
             return MessageHelper.success("Logout successful");
 
         } catch (Exception e) {
-            LOG.severe("Erro no Logout: " + e.getMessage());
+            LOG.severe("Error in logout: " + e.getMessage());
             return MessageHelper.error(ErrorMessages.INTERNAL_ERROR, ErrorMessages.INTERNAL_ERROR_MSG);
         }
     }
@@ -464,7 +461,6 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response listAllAttributes() {
         try {
-            // 1. Obter todos os UTILIZADORES (tabela User)
             Query<Entity> userQuery = Query.newEntityQueryBuilder().setKind("User").build();
             QueryResults<Entity> userResults = datastore.run(userQuery);
 
@@ -475,14 +471,12 @@ public class UserResource {
                 String username = user.getKey().getName();
 
                 Map<String, Object> userData = new LinkedHashMap<>();
-                // Atributos base do utilizador
                 userData.put("username", username);
                 userData.put("role", user.contains("user_role") ? user.getString("user_role") : "N/A");
                 userData.put("phone", user.contains("user_phone") ? user.getString("user_phone") : "N/A");
                 userData.put("address", user.contains("user_address") ? user.getString("user_address") : "N/A");
                 userData.put("pwd_hash", user.getString("user_pwd"));
 
-                // 2. Procurar TOKENS associados a este username (tabela Token)
                 Query<Entity> tokenQuery = Query.newEntityQueryBuilder()
                         .setKind("Token")
                         .setFilter(PropertyFilter.eq("username", username))
@@ -495,7 +489,6 @@ public class UserResource {
                     Map<String, Object> tMap = new LinkedHashMap<>();
                     tMap.put("tokenID", token.getKey().getName());
 
-                    // Verificação de segurança para o nome do campo de expiração
                     String expiresStr = "N/A";
                     if (token.contains("expiration_date")) {
                         expiresStr = new Date(token.getLong("expiration_date")).toString();
@@ -513,7 +506,6 @@ public class UserResource {
                 resultList.add(userData);
             }
 
-            // Retorna a lista de todos os utilizadores (com ou sem tokens)
             return MessageHelper.success(resultList);
 
         } catch (Exception e) {

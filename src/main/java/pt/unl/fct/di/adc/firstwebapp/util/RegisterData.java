@@ -31,7 +31,7 @@ public class RegisterData {
 		return nonEmptyOrBlankField(username) &&
 				username.contains("@") &&
 				nonEmptyOrBlankField(password) &&
-				password.equals(confirmation) && // Validar sempre a password
+				password.equals(confirmation) &&
 				nonEmptyOrBlankField(phone) &&
 				nonEmptyOrBlankField(address) &&
 				nonEmptyOrBlankField(role) &&

@@ -233,8 +233,8 @@
       <secure>false</secure>
       <max-age>-1</max-age>
     </cookie-config>
-    <tracking-mode>URL</tracking-mode>
     <tracking-mode>COOKIE</tracking-mode>
+    <tracking-mode>URL</tracking-mode>
   </session-config>
   <error-page origin="WebDescriptor(file:///D:/NOVA/3%20Ano%202%20Sem/ADC/projeto1/target/appengine-staging/WEB-INF/web.xml):48">
     <error-code>500</error-code>
